@@ -3,7 +3,7 @@
  * updating fuzzy timestamps (e.g. "4 minutes ago" or "about 1 day ago").
  *
  * @name timeago
- * @version 1.4.1
+ * @version 1.3.1
  * @requires jQuery v1.2.3+
  * @author Ryan McGeary
  * @license MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -39,23 +39,21 @@
   $.extend($.timeago, {
     settings: {
       refreshMillis: 60000,
-      allowPast: true,
       allowFuture: false,
       localeTitle: false,
       cutoff: 0,
       strings: {
         prefixAgo: null,
         prefixFromNow: null,
-        suffixAgo: "ago",
-        suffixFromNow: "from now",
-        inPast: 'any moment now',
-        seconds: "less than a minute",
-        minute: "about a minute",
-        minutes: "%d minutes",
-        hour: "about an hour",
-        hours: "about %d hours",
-        day: "a day",
-        days: "%d days",
+        suffixAgo: null,
+        suffixFromNow: null,
+        seconds: "now",
+        minute: "1m",
+        minutes: "%dm",
+        hour: "1h",
+        hours: "%dh",
+        day: "1d",
+        days: "%dd",
         month: "about a month",
         months: "%d months",
         year: "about a year",
@@ -64,12 +62,7 @@
         numbers: []
       }
     },
-
     inWords: function(distanceMillis) {
-      if(!this.settings.allowPast && ! this.settings.allowFuture) {
-          throw 'timeago allowPast and allowFuture settings can not both be set to false.';
-      }
-
       var $l = this.settings.strings;
       var prefix = $l.prefixAgo;
       var suffix = $l.suffixAgo;
@@ -80,15 +73,10 @@
         }
       }
 
-      if(!this.settings.allowPast && distanceMillis >= 0) {
-        return this.settings.strings.inPast;
-      }
-
       var seconds = Math.abs(distanceMillis) / 1000;
       var minutes = seconds / 60;
       var hours = minutes / 60;
       var days = hours / 24;
-      var years = days / 365;
 
       function substitute(stringOrFunction, number) {
         var string = $.isFunction(stringOrFunction) ? stringOrFunction(number, distanceMillis) : stringOrFunction;
@@ -96,23 +84,18 @@
         return string.replace(/%d/i, value);
       }
 
-      var words = seconds < 45 && substitute($l.seconds, Math.round(seconds)) ||
-        seconds < 90 && substitute($l.minute, 1) ||
-        minutes < 45 && substitute($l.minutes, Math.round(minutes)) ||
-        minutes < 90 && substitute($l.hour, 1) ||
+      var words = seconds < 60 && substitute($l.seconds, Math.round(seconds)) ||
+        seconds < 120 && substitute($l.minute, 1) ||
+        minutes < 60 && substitute($l.minutes, Math.round(minutes)) ||
+        minutes < 120 && substitute($l.hour, 1) ||
         hours < 24 && substitute($l.hours, Math.round(hours)) ||
-        hours < 42 && substitute($l.day, 1) ||
-        days < 30 && substitute($l.days, Math.round(days)) ||
-        days < 45 && substitute($l.month, 1) ||
-        days < 365 && substitute($l.months, Math.round(days / 30)) ||
-        years < 1.5 && substitute($l.year, 1) ||
-        substitute($l.years, Math.round(years));
+        hours < 48 && substitute($l.day, 1) ||
+        substitute($l.days, Math.round(days));
 
       var separator = $l.wordSeparator || "";
       if ($l.wordSeparator === undefined) { separator = " "; }
       return $.trim([prefix, words, suffix].join(separator));
     },
-
     parse: function(iso8601) {
       var s = $.trim(iso8601);
       s = s.replace(/\.\d+/,""); // remove milliseconds
@@ -175,18 +158,11 @@
   };
 
   function refresh() {
-    //check if it's still visible
-    if(!$.contains(document.documentElement,this)){
-      //stop if it has been removed
-      $(this).timeago("dispose");
-      return this;
-    }
-
     var data = prepareData(this);
     var $s = $t.settings;
 
     if (!isNaN(data.datetime)) {
-      if ( $s.cutoff == 0 || Math.abs(distance(data.datetime)) < $s.cutoff) {
+      if ( $s.cutoff == 0 || distance(data.datetime) < $s.cutoff) {
         $(this).text(inWords(data.datetime));
       }
     }
