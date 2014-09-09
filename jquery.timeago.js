@@ -56,8 +56,8 @@
         days: "%dd",
         month: "about a month",
         months: "%d months",
-        year: "about a year",
-        years: "%d years",
+        year: "1y",
+        years: "%dy",
         wordSeparator: " ",
         numbers: []
       }
@@ -77,6 +77,7 @@
       var minutes = seconds / 60;
       var hours = minutes / 60;
       var days = hours / 24;
+      var years = days / 365;
 
       function substitute(stringOrFunction, number) {
         var string = $.isFunction(stringOrFunction) ? stringOrFunction(number, distanceMillis) : stringOrFunction;
@@ -90,7 +91,8 @@
         minutes < 120 && substitute($l.hour, 1) ||
         hours < 24 && substitute($l.hours, Math.round(hours)) ||
         hours < 48 && substitute($l.day, 1) ||
-        substitute($l.days, Math.round(days));
+        days < 365 && substitute($l.days, Math.round(days)) ||
+        substitute($l.years, Math.round(years));
 
       var separator = $l.wordSeparator || "";
       if ($l.wordSeparator === undefined) { separator = " "; }
